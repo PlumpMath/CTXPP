@@ -1,0 +1,41 @@
+TODO : 
+* implement the rest of the tests
+** test_all_of.cpp
+** test_any_of.cpp
+** test_first_of.cpp
+** test_component_phases.cpp
+** test_kill_task.cpp
+** test_return_val.cpp
+** test_subtask.cpp
+* ker istance is not destroyed at the end of test
+* have a finalize phase for components?
+* looping over maps should be done with while not for
+
+DEFER : 
+* implement an YIELD_VAL(value) context switch to support coroutines
+* implement an YIELD_TO(other_task) context switch to support coroutines
+* unregister_task is called multiple times
+** even after the task has been 
+
+SCHEDULE : 
+
+DELEGATE :
+
+************************************************************
+
+REFERENCE : 
+
+INCUBATOR : 
+* implement garbage collection
+* implement the ctx_object class
+** all other classes will inherit from it
+** a factory class will be used to create objects instead of using the constructor
+** type and instance overrides for any object will be supported
+
+TRASH : 
+
+************************************************************
+
+COLLECT :
+* add method ports
+* add put/get fifo ports

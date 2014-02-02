@@ -1,0 +1,3 @@
+==Context++ v0.0.1==
+
+Context++ is a concurrent programming library for C++ which does not require the use of native threads. Context++ programs consist of special methods called "tasks" which run concurrently in a single thread. Multiple native threads may be used to increase performance on multi-core platforms but this may create unexpected side effects and the program might not have the same behavior as the single threaded one. 
