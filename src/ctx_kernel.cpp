@@ -68,7 +68,6 @@ void ctx_kernel::evaluate() {
 	std::vector<ctx_event*>::iterator ev;
 	// Auxiliary task pointer
 	ctx_task_base* atp;
-// 	std::vector<ctx_task_base*> new_tasks;
 	// Run sync callbacks for fired events
 	for(ev=events_to_fire.begin();ev!=events_to_fire.end();++ev) {
 		(*ev)->call_sync_callbacks();
@@ -105,7 +104,7 @@ void ctx_kernel::evaluate() {
 					atp = ((ctx_switch_join_task*)cs)->task_to_join;
 					(*task)->state = CTX_TASK_PENDING;
 					if(!atp->is_registered)
-						register_task(((ctx_switch_join_task*)cs)->task_to_join);
+						register_task(atp);
 					break;
 				case CTX_CS_ALL_OF:
 					tasks_to_fork[(*task)] =((ctx_switch_all_of*)cs)->tasks;
@@ -190,9 +189,6 @@ void ctx_kernel::advance_time(double time_limit=-1) {
 	for(t = times_to_wait.begin();t!=times_to_wait.end();++t) {
 		if(t->second==delta_t && t->first->state!=CTX_TASK_FINISHED ) {
 			schedule_resume_task(t->first);
-			// (t->first)->state = CTX_TASK_RUNNING;
-			// running_tasks.push_back(t->first);
-			//(t->first)->running_iterator=running_tasks.end()-1;
 			times_to_wait.erase(t);
 		} else {
 			if(time+delta_t<time_limit || time_limit==-1)
@@ -219,8 +215,6 @@ void ctx_kernel::advance_delta(long int delta_limit=-1) {
 	for(e = events_to_wait.begin(); e!=events_to_wait.end(); ++e) {
 		if(e->second->state==CTX_EVENT_ON && e->first->state!=CTX_TASK_FINISHED) {
 			schedule_resume_task(e->first);
-			// e->first->state = CTX_TASK_RUNNING;
-			//running_tasks.push_back(e->first);
 			e->second->consume();
 			events_to_wait.erase(e);
 		}
@@ -245,7 +239,6 @@ bool all_tasks_finished(std::vector<ctx_task_base*>* tasks) {
 		if((*t)->state!=CTX_TASK_FINISHED)
 			return false;
 	return true;
-//	return running_tasks.empty() && pending_tasks.empty();
 }
 
 bool has_finished_task(std::vector<ctx_task_base*>* tasks) {
@@ -273,8 +266,6 @@ void ctx_kernel::advance_waiting_tasks() {
 	for(jt=tasks_to_join.begin();jt!=tasks_to_join.end();++jt) {
 		if(jt->second->state==CTX_TASK_FINISHED && jt->first->state!=CTX_TASK_FINISHED) {
 			schedule_resume_task(jt->first);
-			// jt->first->state = CTX_TASK_RUNNING;
-			// running_tasks.push_back(jt->first);
 			tasks_to_join.erase(jt);
 		}
 	}
@@ -287,8 +278,6 @@ void ctx_kernel::advance_waiting_tasks() {
 					for(aux_it=aux_task_list.begin();aux_it!=aux_task_list.end();++aux_it)
 						(*aux_it)->kill();
 					schedule_resume_task(ft->first);
-					// ft->first->state=CTX_TASK_RUNNING;
-					// running_tasks.push_back(ft->first);
 					delete ft->second;
 					tasks_to_fork.erase(ft);
 				}
@@ -296,8 +285,6 @@ void ctx_kernel::advance_waiting_tasks() {
 			case CTX_CS_ALL_OF:
 				if(all_tasks_finished(ft->second)) {
 					schedule_resume_task(ft->first);
-					// ft->first->state=CTX_TASK_RUNNING;
-					// running_tasks.push_back(ft->first);
 					delete ft->second;
 					tasks_to_fork.erase(ft);
 				}
@@ -305,8 +292,6 @@ void ctx_kernel::advance_waiting_tasks() {
 			case CTX_CS_ANY_OF:
 				if(has_finished_task(ft->second)) {
 					schedule_resume_task(ft->first);
-					// ft->first->state=CTX_TASK_RUNNING;
-					// running_tasks.push_back(ft->first);
 					delete ft->second;
 					tasks_to_fork.erase(ft);
 				}
@@ -339,14 +324,6 @@ void ctx_kernel::schedule_resume_task(ctx_task_base* t) {
 }
 
 void ctx_kernel::unregister_task(ctx_task_base* task) {
-	std::vector<ctx_task_base*>::iterator it;
-	// Remove from tasks list
-	// TODO : find a way to move finished tasks to a separate list
-// 	for(it=tasks.begin();it!=tasks.end();++it)
-// 		if((*it)==task) {
-// 			tasks.erase(it);
-// 			break;
-// 		}
 	// Remove from times_to_wait
 	if(times_to_wait.find(task)!=times_to_wait.end())
 		times_to_wait.erase(task);
@@ -425,11 +402,6 @@ ctx_task_base* ctx_kernel::get_current_task() {
 }
 
 bool ctx_kernel::tasks_running() {
-// 	std::vector<ctx_task_base*>::iterator it;
-// 	for(it=tasks.begin();it!=tasks.end();++it)
-// 		if( (*it)->state == CTX_TASK_RUNNING )
-// 			return true;
-// 	return false;
 	return running_tasks.size()>0;
 }
 
