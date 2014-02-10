@@ -28,3 +28,13 @@ test_first_of:
 	
 test_any_of:
 	g++ -std=gnu++11 -g -I./include -L./ -Wl,-rpath=. -o test_any_of.exe tests/test_any_of.cpp -lctxpp
+
+basic_test:
+	g++ -std=gnu++11 -I./include -L./ -Wl,-rpath=. -o basic_test.exe benchmarks/basic_test.cpp -lctxpp
+	
+basic_test_sc:
+	g++ -std=gnu++11 -g -I/home/developer/sandbox/systemc-2.3.0/include \
+	-L/home/developer/sandbox/systemc-2.3.0/lib-linux64 \
+	-Wl,-rpath=/home/developer/sandbox/systemc-2.3.0/lib-linux64 \
+	-o basic_test_sc.exe \
+	benchmarks/basic_test_sc.cpp -lsystemc 

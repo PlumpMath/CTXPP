@@ -13,17 +13,17 @@ struct DelayTest: ctx_component {
 	CS_TASK(try_delay)
 		int id;
 	CS_BEGIN_BODY
-		std::cout<<"Hello 1 from task "<<id<<std::endl;
+		std::cout<<ker->time<<": "<<"Hello 1 from task "<<id<<std::endl;
 		CS_DELAY(10);
-		std::cout<<"Hello 2 from task "<<id<<std::endl;
+		std::cout<<ker->time<<": "<<"Hello 2 from task "<<id<<std::endl;
 		CS_DELAY(20);
-		std::cout<<"Hello 3 from task "<<id<<std::endl;
+		std::cout<<ker->time<<": "<<"Hello 3 from task "<<id<<std::endl;
 	CS_END_BODY
 	
 	// Dummy task
 	CS_TASK(dummy_task)
 	CS_BEGIN_BODY
-		std::cout<<"Dummy says hello!"<<std::endl;
+		std::cout<<ker->time<<": "<<"Dummy says hello!"<<std::endl;
 		CS_DELAY(40);
 	CS_END_BODY
 	
@@ -46,24 +46,32 @@ struct DelayTest: ctx_component {
 		// Run 3 instances of try_delay in parallel 
 		CS_ALL_OF(tlist);
 		// Wait some time
-		std::cout<<"Waiting drain time ..."<<std::endl;
+		std::cout<<ker->time<<": "<<"Waiting drain time ..."<<std::endl;
 		CS_DELAY(100);
+		std::cout<<ker->time<<": "<<"Done waiting drain time ..."<<std::endl;
 		// Run one instance of dummy_task and wait for it to finish
+		std::cout<<ker->time<<": "<<"Calling dummy task..."<<std::endl;
 		CS_CALL_TASK(ctx, dummy_task);
+		std::cout<<ker->time<<": "<<"Done calling dummy task..."<<std::endl;
 		
 		// Calling another instance of dummy_task in a different way
+		std::cout<<ker->time<<": "<<"Starting dummy task..."<<std::endl;
 		dummy_task_inst = dummy_task::call_from(ctx);
 		dummy_task_inst->start();
 		
+		std::cout<<ker->time<<": "<<"Waiting 10 seconds..."<<std::endl;
 		CS_DELAY(10);
+		std::cout<<ker->time<<": "<<"Done waiting 10 seconds..."<<std::endl;
 		
+		std::cout<<ker->time<<": "<<"Joining dummy_task..."<<std::endl;
 		CS_JOIN(dummy_task_inst);
+		std::cout<<ker->time<<": "<<"Done joining dummy_task..."<<std::endl;
 		
-		std::cout<<"I'm done!!!"<<std::endl;
+		std::cout<<ker->time<<": "<<"I'm done!!!"<<std::endl;
 	CS_END_BODY
 	
 	void run_phase() {
-		std::cout<<"Doing the run_phase..."<<std::endl;
+		std::cout<<ker->time<<": "<<"Doing the run_phase..."<<std::endl;
 		START_TASK(this, main_task);
 	}
 };

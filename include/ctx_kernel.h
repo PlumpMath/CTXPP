@@ -36,12 +36,10 @@ struct ctx_kernel {
 	virtual void advance_delta(long int);
 	virtual void advance_waiting_tasks();
 	virtual void run(ctx_component*,double,long int);
-	
-	
 	virtual void register_task(ctx_task_base*);
 	virtual void unregister_task(ctx_task_base* task);
-	virtual void register_component(ctx_component* c);
 	
+	virtual void register_component(ctx_component* c);
 	
 	virtual ctx_task_base* get_current_task();
 	
@@ -50,6 +48,8 @@ struct ctx_kernel {
 	virtual void build_components(ctx_component*);
 	virtual void connect_components(ctx_component*);
 	virtual void run_components(ctx_component*);
+	virtual void schedule_resume_task(ctx_task_base*);
+	virtual void schedule_start_task(ctx_task_base*);
 	void get_root_components(std::vector<ctx_component*>&);
 	void get_leaf_components(std::vector<ctx_component*>&);
 	void get_child_components(ctx_component*,std::vector<ctx_component*>&);
@@ -58,11 +58,17 @@ struct ctx_kernel {
 	
 	// Getters and setters
 	void set_root(ctx_component*);
-	
+	virtual void set_tasks_were_killed();
 
 	private:
 	std::vector<ctx_component*> components;
-	std::vector<ctx_task_base*> tasks;
+// 	std::vector<ctx_task_base*> tasks;
+	// Task management lists
+	std::list<ctx_task_base*> running_tasks;
+	std::list<ctx_task_base*> pending_tasks;
+	std::list<ctx_task_base*> finished_tasks;
+	std::vector<ctx_task_base*> new_tasks;
+	// Kernel state
 	std::map<ctx_task_base*,double> times_to_wait;
 	std::map<ctx_task_base*,ctx_event*> events_to_wait;
 	std::vector<ctx_event*> emitted_events;
@@ -73,6 +79,7 @@ struct ctx_kernel {
 	std::vector<ctx_signal*> signals;
 	
 	bool with_real_time;
+	bool tasks_were_killed;
 	
 	
 

@@ -39,3 +39,9 @@ TRASH :
 COLLECT :
 * add method ports
 * add put/get fifo ports
+* for ALL_OF,FIRST_OF,ANY_OF context switches replace the vector of task with a class task_collection
+** it should contain the vector(or a list of tasks)
+** and some flags : all finished, at least one finished
+* solution for more efficiency:
+** change local arguments that are collections to the private fields in the class
+* use PAPI to measure performance

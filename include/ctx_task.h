@@ -18,6 +18,11 @@ struct ctx_task_base {
 	ctx_task_state state;
 	ctx_kernel* ker;
 	std::string name;
+	bool is_registered;
+	
+	// Iterators for kernel list management
+	std::list<ctx_task_base*>::iterator pending_iterator;
+	std::list<ctx_task_base*>::iterator running_iterator;
 	
 	ctx_task_base();
 	~ctx_task_base();
@@ -78,6 +83,7 @@ struct NAME : public ctx_task<this_type,NAME> {\
 		task_id_counter++;\
 		ker = ctx_kernel::get();\
 		parent = ker->get_current_task();\
+		is_registered=false;\
 	}
 	
 
