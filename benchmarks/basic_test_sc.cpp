@@ -9,7 +9,7 @@
 using namespace sc_core;
 
 
-#define MAX_NOF_TASKS 50
+#define MAX_NOF_TASKS 100
 #define NOF_CS_VALS 4
 
 struct BasicTest: public sc_module {
@@ -60,7 +60,7 @@ struct BasicTest: public sc_module {
 		nof_cs_values[0] = 10;
 		nof_cs_values[1] = 20;
 		nof_cs_values[2] = 30;
-		nof_cs_values[3] = 100;
+		nof_cs_values[3] = 500;
 		SC_THREAD(main_task);
 	}
 	

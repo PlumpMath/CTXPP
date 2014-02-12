@@ -3,7 +3,7 @@
 #include <fstream>
 #include <time.h>
 
-#define MAX_NOF_TASKS 50
+#define MAX_NOF_TASKS 100
 #define NOF_CS_VALS 4
 
 struct BasicTest: public ctx_component { 
@@ -20,7 +20,7 @@ struct BasicTest: public ctx_component {
 		nof_cs_values[0] = 10;
 		nof_cs_values[1] = 20;
 		nof_cs_values[2] = 30;
-		nof_cs_values[3] = 100;
+		nof_cs_values[3] = 500;
 	}
 	
 	CTX_COMP_SETUP(BasicTest)

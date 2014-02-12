@@ -42,6 +42,7 @@ COLLECT :
 * for ALL_OF,FIRST_OF,ANY_OF context switches replace the vector of task with a class task_collection
 ** it should contain the vector(or a list of tasks)
 ** and some flags : all finished, at least one finished
-* solution for more efficiency:
+* solutions for more efficiency:
 ** change local arguments that are collections to the private fields in the class
+** use lists instead of maps, move map values to the ctx_task_base class
 * use PAPI to measure performance
