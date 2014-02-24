@@ -10,7 +10,7 @@ ctx_task_base::~ctx_task_base() {}
 void ctx_task_base::kill() {
 	state = CTX_TASK_FINISHED;
 	ker->set_tasks_were_killed();
-	ker->unregister_task(this);
+	//ker->unregister_task(this);
 	kill_children();
 }
 

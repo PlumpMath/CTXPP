@@ -19,10 +19,16 @@ struct ctx_task_base {
 	ctx_kernel* ker;
 	std::string name;
 	bool is_registered;
+	ctx_switch* cs;
+	
+	double time_to_wait;
+	bool unique_ttw;
+	ctx_event* ev_to_wait;
 	
 	// Iterators for kernel list management
 	std::list<ctx_task_base*>::iterator pending_iterator;
 	std::list<ctx_task_base*>::iterator running_iterator;
+	std::list<ctx_task_base*>::iterator tct_iterator;
 	
 	ctx_task_base();
 	~ctx_task_base();
@@ -61,6 +67,7 @@ struct ctx_task:ctx_task_base {
 		TASK_T* result = new TASK_T();
 		result->ctx=ctx;
 		result->comp=ctx;
+		result->cs=NULL;
 		return result;
 	}
 	~ctx_task() {}

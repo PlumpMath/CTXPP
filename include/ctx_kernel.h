@@ -68,8 +68,9 @@ struct ctx_kernel {
 	std::list<ctx_task_base*> pending_tasks;
 	std::list<ctx_task_base*> finished_tasks;
 	std::vector<ctx_task_base*> new_tasks;
+	std::list<ctx_task_base*> tasks_consuming_time;
 	// Kernel state
-	std::map<ctx_task_base*,double> times_to_wait;
+	//std::map<ctx_task_base*,double> times_to_wait;
 	std::map<ctx_task_base*,ctx_event*> events_to_wait;
 	std::vector<ctx_event*> emitted_events;
 	std::vector<ctx_event*> events_to_fire;
@@ -77,6 +78,11 @@ struct ctx_kernel {
 	std::map<ctx_task_base*,ctx_task_base*> tasks_to_join;
 	std::map<ctx_task_base*,std::vector<ctx_task_base*>*> tasks_to_fork;
 	std::vector<ctx_signal*> signals;
+	
+	// For simulation time management
+	std::set<double> times_to_wait;
+	double dq;
+	double delta_t;
 	
 	bool with_real_time;
 	bool tasks_were_killed;

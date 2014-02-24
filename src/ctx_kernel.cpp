@@ -9,20 +9,25 @@ ctx_kernel::ctx_kernel():
 	pending_tasks(),
 	finished_tasks(),
 	new_tasks(),
-	times_to_wait(),
+	tasks_consuming_time(),
+	events_to_wait(),
 	emitted_events(),
+	events_to_fire(),
 	context_switches(),
 	tasks_to_join(),
 	tasks_to_fork(),
-	signals()
+	signals(),
+	times_to_wait()
 {
 	with_real_time = false;
 	tasks_were_killed = false;
 	time=0;
 	delta=0;
+	dq = 0;
 	time_scale=1;
 	time_unit=CTX_SIM_S;
-	state=CTX_KERNEL_PAUSED;		
+	state=CTX_KERNEL_PAUSED;
+	delta_t = std::numeric_limits<double>::max();
 }
 
 ctx_kernel::~ctx_kernel() {}
@@ -53,7 +58,7 @@ void ctx_kernel::run(ctx_component* r,double time_limit=-1,long int delta_limit=
 		}
 		else if( tasks_running() )
 			continue;
-		else if(times_to_wait.size()!=0) {
+		else if(tasks_consuming_time.size()!=0) {
 			advance_time(time_limit);
 			if(state==CTX_KERNEL_RUNNING) continue;
 		} else
@@ -66,6 +71,7 @@ void ctx_kernel::evaluate() {
 	std::vector<ctx_task_base*>::iterator subtask,it;
 	std::list<ctx_task_base*>::iterator task;
 	std::vector<ctx_event*>::iterator ev;
+	std::pair<std::set<double>::iterator,bool> result;
 	// Auxiliary task pointer
 	ctx_task_base* atp;
 	// Run sync callbacks for fired events
@@ -79,20 +85,30 @@ void ctx_kernel::evaluate() {
 		if((*task)->state!=CTX_TASK_FINISHED) {
 			current_task = (*task);// TODO Adapt this for native threads
 			cs = (*task)->next();
-			context_switches[(*task)] = cs->type;
+			if((*task)->cs) delete (*task)->cs; // TODO this might hurt performance
+			(*task)->cs = cs;
+			// context_switches[(*task)] = cs->type;
 			// Update kernel state
 			switch(cs->type) {
 				case CTX_CS_YIELD:
 					(*task)->state = CTX_TASK_RUNNING;
 					break;
-				case CTX_CS_DELAY:     
-					times_to_wait[(*task)] = ((ctx_switch_delay*)cs)->delay_val;
+				case CTX_CS_DELAY:
+					(*task)->time_to_wait = ((ctx_switch_delay*)cs)->delay_val;
+					result=times_to_wait.insert((*task)->time_to_wait+dq);
+					(*task)->unique_ttw=result.second;
+					tasks_consuming_time.push_back(*task);
+					(*task)->tct_iterator= --tasks_consuming_time.end();
 					(*task)->state = CTX_TASK_PENDING;
 					break;
 				case CTX_CS_DELAY_STD:
-					times_to_wait[(*task)] = 
+					(*task)->time_to_wait = 
 					((ctx_switch_delay_std*)cs)->delay_std_val *
 					(((ctx_switch_delay_std*)cs)->time_unit/(time_unit*time_scale));
+					result=times_to_wait.insert((*task)->time_to_wait+dq);
+					(*task)->unique_ttw=result.second;
+					tasks_consuming_time.push_back(*task);
+					(*task)->tct_iterator= --tasks_consuming_time.end();
 					(*task)->state = CTX_TASK_PENDING;
 					break;
 				case CTX_CS_WAIT_EV:
@@ -145,9 +161,12 @@ void ctx_kernel::evaluate() {
 			task = running_tasks.erase(task);			
 		} 
 		else if((*task)->state==CTX_TASK_FINISHED) {
+			// Task was stopped or returned a value
+			// or the simulation was finished
 			finished_tasks.push_back(*task);
 			unregister_task(*task);
 			task = running_tasks.erase(task);
+			//tasks_were_killed=false;
 		} else 
 			++task;
 	}
@@ -165,8 +184,8 @@ void ctx_kernel::evaluate() {
 		while(task!=pending_tasks.end()) {
 			if((*task)->state==CTX_TASK_FINISHED) {
 				finished_tasks.push_back(*task);
-				task = pending_tasks.erase(task);
 				unregister_task(*task);
+				task = pending_tasks.erase(task);
 			} else
 				++task;
 		}
@@ -178,23 +197,35 @@ void ctx_kernel::update() {
 }
 
 void ctx_kernel::advance_time(double time_limit=-1) {
-	double delta_t = std::numeric_limits<double>::max();
+	std::list<ctx_task_base*>::iterator t;
 	delta = 0;
-	std::map<ctx_task_base*,double>::iterator t;
+	
+	//std::map<ctx_task_base*,double>::iterator t;
 	// Calculate delta_t(minimum of all times to wait)
-	for(t = times_to_wait.begin();t!=times_to_wait.end();++t)
-		if(t->second < delta_t) delta_t = t->second;
-		
+	//for(t = times_to_wait.begin();t!=times_to_wait.end();++t)
+	//	if(t->second < delta_t) delta_t = t->second;
+	
+	delta_t = *(times_to_wait.begin());
+	delta_t -= dq;
+	if(time+delta_t>=time_limit && time_limit!=-1)
+		delta_t = (time+delta_t)-time_limit;
+	dq += delta_t;
+	times_to_wait.erase(times_to_wait.begin());
+	
 	// Resume tasks which wait the smallest time
-	for(t = times_to_wait.begin();t!=times_to_wait.end();++t) {
-		if(t->second==delta_t && t->first->state!=CTX_TASK_FINISHED ) {
-			schedule_resume_task(t->first);
-			times_to_wait.erase(t);
+	t = tasks_consuming_time.begin();
+	while(t!=tasks_consuming_time.end())
+	{
+		if((*t)->time_to_wait==delta_t && (*t)->state!=CTX_TASK_FINISHED ) {
+			schedule_resume_task(*t);
+			(*t)->cs->type=CTX_CS_YIELD;
+			t=tasks_consuming_time.erase(t);
 		} else {
 			if(time+delta_t<time_limit || time_limit==-1)
-				t->second -= delta_t;
+				(*t)->time_to_wait -= delta_t;
 			else
-				t->second -= (time+delta_t) - time_limit;
+				(*t)->time_to_wait -= (time+delta_t) - time_limit;
+			++t;
 		}
 	}
 	
@@ -271,7 +302,7 @@ void ctx_kernel::advance_waiting_tasks() {
 	}
 	// Advance tasks waiting for groups of tasks
 	for(ft=tasks_to_fork.begin();ft!=tasks_to_fork.end();++ft) {
-		switch(context_switches[ft->first]) {
+		switch(ft->first->cs->type) {
 			case CTX_CS_FIRST_OF:
 				if(has_finished_task(ft->second)) {
 					get_running_tasks(ft->second,aux_task_list);
@@ -325,20 +356,25 @@ void ctx_kernel::schedule_resume_task(ctx_task_base* t) {
 
 void ctx_kernel::unregister_task(ctx_task_base* task) {
 	// Remove from times_to_wait
-	if(times_to_wait.find(task)!=times_to_wait.end())
-		times_to_wait.erase(task);
+	//if(times_to_wait.find(task)!=times_to_wait.end())
+	//	times_to_wait.erase(task);
+	//if(task->unique_ttw)
+	//	times_to_wait.erase(task->time_to_wait);
+	if(task->cs!=NULL && task->cs->type==CTX_CS_DELAY)
+		tasks_consuming_time.erase(task->tct_iterator);
 	// Remove from events_to_wait
-	if(events_to_wait.find(task)!=events_to_wait.end())
-		events_to_wait.erase(task);
+	//if(events_to_wait.find(task)!=events_to_wait.end())
+	events_to_wait.erase(task);
 	// Remove from context_switches
-	if(context_switches.find(task)!=context_switches.end())
-		context_switches.erase(task);
+	//if(context_switches.find(task)!=context_switches.end())
+	context_switches.erase(task);
 	// Remove from tasks_to_join
-	if(tasks_to_join.find(task)!=tasks_to_join.end())
-		tasks_to_join.erase(task);
+	//if(tasks_to_join.find(task)!=tasks_to_join.end())
+	tasks_to_join.erase(task);
 	// Remove from tasks_to_fork
-	if(tasks_to_fork.find(task)!=tasks_to_fork.end())
-		tasks_to_fork.erase(task);
+	//if(tasks_to_fork.find(task)!=tasks_to_fork.end())
+	tasks_to_fork.erase(task);
+	
 	task->is_registered=false;
 }
 
