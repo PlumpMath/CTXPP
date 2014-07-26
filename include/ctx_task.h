@@ -25,6 +25,9 @@ struct ctx_task_base {
 	bool unique_ttw;
 	ctx_event* ev_to_wait;
 	
+	unsigned int nof_forked_children;
+	bool done_first_of;
+	
 	// Iterators for kernel list management
 	std::list<ctx_task_base*>::iterator pending_iterator;
 	std::list<ctx_task_base*>::iterator running_iterator;
@@ -34,6 +37,7 @@ struct ctx_task_base {
 	~ctx_task_base();
 	// Jumps to next context switch
 	virtual ctx_switch* next();
+	
 	// Kill task instance
 	void kill();
 	// Kill only the children tasks
@@ -68,6 +72,8 @@ struct ctx_task:ctx_task_base {
 		result->ctx=ctx;
 		result->comp=ctx;
 		result->cs=NULL;
+		result->nof_all_of_children=0;
+		result->done_first_of=true;
 		return result;
 	}
 	~ctx_task() {}

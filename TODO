@@ -10,6 +10,8 @@ TODO :
 * ker istance is not destroyed at the end of test
 * have a finalize phase for components?
 * looping over maps should be done with while not for
+* optimize ALL_OF management in the kernel
+
 
 DEFER : 
 * implement an YIELD_VAL(value) context switch to support coroutines
@@ -31,8 +33,10 @@ INCUBATOR :
 ** all other classes will inherit from it
 ** a factory class will be used to create objects instead of using the constructor
 ** type and instance overrides for any object will be supported
+* try using preemptive threads
 
 TRASH : 
+* use PAPI to measure performance
 
 ************************************************************
 
@@ -45,4 +49,3 @@ COLLECT :
 * solutions for more efficiency:
 ** change local arguments that are collections to the private fields in the class
 ** use lists instead of maps, move map values to the ctx_task_base class
-* use PAPI to measure performance

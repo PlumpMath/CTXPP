@@ -5,6 +5,7 @@
 #include <fstream>
 #include <random>
 #include <time.h>
+#include <papi.h>
 
 using namespace sc_core;
 
@@ -29,22 +30,23 @@ struct BasicTest: public sc_module {
 	
 	void main_task() {
 		std::ofstream f;
-		clock_t t0;
-		double dt;
+		long long t0;
+		long long dt;
 		sc_core::sc_join join;
 		f.open("result_sc");
 		for(int k=0;k<NOF_CS_VALS;k++) {
 			for(int i=1;i<=MAX_NOF_TASKS;i++) {
 				std::cout<<"Running "<<i<<" tasks with "<<nof_cs_values[k]<<" context switches..."<<std::endl;
 				// see sc_join.h line 97
-				t0 = clock();
+				t0 = PAPI_get_real_usec();
 				for(int j=0;j<i;j++) {
 					sc_process_handle h;
 					h=sc_spawn(sc_bind(&BasicTest::task_tpl,this,nof_cs_values[k]));
 					join.add_process(h);					
 				}
 				join.wait();
-				dt = ((double)(clock()-t0))/CLOCKS_PER_SEC;
+				//dt = ((double)(clock()-t0))/CLOCKS_PER_SEC;
+				dt = PAPI_get_real_usec()-t0;
 				f<<nof_cs_values[k]<<" "<<i<<" "<<dt<<std::endl;
 			}
 			
@@ -68,6 +70,10 @@ struct BasicTest: public sc_module {
 
 
 int sc_main (int argc, char* argv[]) {
+	if (PAPI_library_init(PAPI_VER_CURRENT) != PAPI_VER_CURRENT) {
+		std::cerr<<"PAPI error"<<std::endl;
+		exit(1);
+	}
 	BasicTest top("top");
 	sc_start();
 }

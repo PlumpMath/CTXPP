@@ -2,6 +2,7 @@
 #include <random>
 #include <fstream>
 #include <time.h>
+#include <papi.h>
 
 #define MAX_NOF_TASKS 100
 #define NOF_CS_VALS 4
@@ -43,8 +44,8 @@ struct BasicTest: public ctx_component {
 		ctx_task_base* t;
 		std::vector<ctx_task_base*>* l;
 		int i,j,k;
-		clock_t t0;
-		double dt;
+		long long t0;
+		long long dt;
 		std::ofstream f;
 		std::string fname;
 	CS_BEGIN_BODY
@@ -60,9 +61,11 @@ struct BasicTest: public ctx_component {
 					((task_tpl*)t)->nof_cs = ctx->nof_cs_values[k];
 					l->push_back(t);
 				}
-				t0=clock();
+				//t0=clock();
+				t0 = PAPI_get_real_usec();
 				CS_ALL_OF(l);
-				dt = ((double)(clock() - t0))/CLOCKS_PER_SEC;
+				//dt = ((double)(clock() - t0))/CLOCKS_PER_SEC;
+				dt = PAPI_get_real_usec() - t0;
 				f<<ctx->nof_cs_values[k]<<" "<<i<<" "<<dt<<std::endl;
 			}
 		}
@@ -75,6 +78,10 @@ struct BasicTest: public ctx_component {
 };
 
 int main() {
+	if (PAPI_library_init(PAPI_VER_CURRENT) != PAPI_VER_CURRENT) {
+		std::cerr<<"PAPI error"<<std::endl;
+		exit(1);
+	}
 	ctx_kernel* ker = ctx_kernel::get();
 	BasicTest* top = new BasicTest("top",NULL);
 	ker->run(top,-1,-1);

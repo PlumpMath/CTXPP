@@ -376,6 +376,20 @@ void ctx_kernel::unregister_task(ctx_task_base* task) {
 	tasks_to_fork.erase(task);
 	
 	task->is_registered=false;
+	
+	if(task->parent) {
+		if(task->parent->cs!=NULL)
+			switch(task->parent->cs->type) {
+				case CTX_CS_ALL_OF:
+					--task->parent->nof_forked_children;
+					break;
+				case CTX_CS_FIRST_OF:
+				case CTX_CS_ANY_OF:
+					task->parent->done_first_of = true;
+					break;
+				default: break;
+			}
+	}
 }
 
 // Component related methods
